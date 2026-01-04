@@ -1,0 +1,210 @@
+{
+  "rarityWeights": {
+    "common": 60,
+    "magic": 25,
+    "rare": 12,
+    "legendary": 3
+  },
+  "rarityColors": {
+    "common": "#9d9d9d",
+    "magic": "#4169e1",
+    "rare": "#ffd700",
+    "legendary": "#ff8c00"
+  },
+  "rarityAffixCount": {
+    "common": { "min": 1, "max": 1 },
+    "magic": { "min": 2, "max": 3 },
+    "rare": { "min": 4, "max": 5 },
+    "legendary": { "min": 6, "max": 7 }
+  },
+  "baseItems": [
+    {
+      "id": "sword_iron",
+      "name": "Iron Sword",
+      "slot": "mainhand",
+      "type": "weapon",
+      "baseStats": {
+        "damageMin": 5,
+        "damageMax": 10
+      },
+      "levelRange": { "min": 1, "max": 10 }
+    },
+    {
+      "id": "sword_steel",
+      "name": "Steel Sword",
+      "slot": "mainhand",
+      "type": "weapon",
+      "baseStats": {
+        "damageMin": 12,
+        "damageMax": 22
+      },
+      "levelRange": { "min": 8, "max": 20 }
+    },
+    {
+      "id": "axe_iron",
+      "name": "Iron Axe",
+      "slot": "mainhand",
+      "type": "weapon",
+      "baseStats": {
+        "damageMin": 8,
+        "damageMax": 15
+      },
+      "levelRange": { "min": 1, "max": 12 }
+    },
+    {
+      "id": "helm_leather",
+      "name": "Leather Cap",
+      "slot": "head",
+      "type": "armor",
+      "baseStats": {
+        "armor": 5
+      },
+      "levelRange": { "min": 1, "max": 8 }
+    },
+    {
+      "id": "helm_iron",
+      "name": "Iron Helm",
+      "slot": "head",
+      "type": "armor",
+      "baseStats": {
+        "armor": 12
+      },
+      "levelRange": { "min": 6, "max": 15 }
+    },
+    {
+      "id": "chest_leather",
+      "name": "Leather Vest",
+      "slot": "chest",
+      "type": "armor",
+      "baseStats": {
+        "armor": 8
+      },
+      "levelRange": { "min": 1, "max": 10 }
+    },
+    {
+      "id": "ring_copper",
+      "name": "Copper Ring",
+      "slot": "ring",
+      "type": "accessory",
+      "baseStats": {},
+      "levelRange": { "min": 1, "max": 20 }
+    }
+  ],
+  "affixes": {
+    "prefixes": [
+      {
+        "id": "strength",
+        "name": "of Strength",
+        "stat": "strength",
+        "tiers": [
+          { "minLevel": 1, "maxLevel": 10, "minValue": 1, "maxValue": 5 },
+          { "minLevel": 8, "maxLevel": 20, "minValue": 4, "maxValue": 10 },
+          { "minLevel": 18, "maxLevel": 50, "minValue": 8, "maxValue": 20 }
+        ]
+      },
+      {
+        "id": "vitality",
+        "name": "of Vitality",
+        "stat": "vitality",
+        "tiers": [
+          { "minLevel": 1, "maxLevel": 10, "minValue": 2, "maxValue": 8 },
+          { "minLevel": 8, "maxLevel": 20, "minValue": 6, "maxValue": 15 },
+          { "minLevel": 18, "maxLevel": 50, "minValue": 12, "maxValue": 30 }
+        ]
+      },
+      {
+        "id": "swiftness",
+        "name": "of Swiftness",
+        "stat": "attackSpeed",
+        "tiers": [
+          { "minLevel": 1, "maxLevel": 15, "minValue": 3, "maxValue": 8 },
+          { "minLevel": 12, "maxLevel": 50, "minValue": 6, "maxValue": 15 }
+        ]
+      },
+      {
+        "id": "might",
+        "name": "Mighty",
+        "stat": "damagePercent",
+        "tiers": [
+          { "minLevel": 5, "maxLevel": 20, "minValue": 5, "maxValue": 15 },
+          { "minLevel": 18, "maxLevel": 50, "minValue": 12, "maxValue": 30 }
+        ]
+      }
+    ],
+    "suffixes": [
+      {
+        "id": "health",
+        "name": "of the Bear",
+        "stat": "maxHealth",
+        "tiers": [
+          { "minLevel": 1, "maxLevel": 10, "minValue": 5, "maxValue": 15 },
+          { "minLevel": 8, "maxLevel": 25, "minValue": 12, "maxValue": 30 },
+          { "minLevel": 20, "maxLevel": 50, "minValue": 25, "maxValue": 60 }
+        ]
+      },
+      {
+        "id": "mana",
+        "name": "of the Owl",
+        "stat": "maxMana",
+        "tiers": [
+          { "minLevel": 1, "maxLevel": 12, "minValue": 3, "maxValue": 10 },
+          { "minLevel": 10, "maxLevel": 50, "minValue": 8, "maxValue": 25 }
+        ]
+      },
+      {
+        "id": "armor",
+        "name": "of Protection",
+        "stat": "armor",
+        "tiers": [
+          { "minLevel": 1, "maxLevel": 10, "minValue": 2, "maxValue": 6 },
+          { "minLevel": 8, "maxLevel": 25, "minValue": 5, "maxValue": 12 },
+          { "minLevel": 22, "maxLevel": 50, "minValue": 10, "maxValue": 25 }
+        ]
+      },
+      {
+        "id": "regen",
+        "name": "of Regeneration",
+        "stat": "healthRegen",
+        "tiers": [
+          { "minLevel": 5, "maxLevel": 20, "minValue": 1, "maxValue": 3 },
+          { "minLevel": 18, "maxLevel": 50, "minValue": 2, "maxValue": 6 }
+        ]
+      }
+    ]
+  },
+  "legendaryItems": [
+    {
+      "id": "excalibur",
+      "baseName": "Excalibur",
+      "baseItem": "sword_steel",
+      "fixedAffixes": [
+        { "id": "strength", "tier": 2 },
+        { "id": "might", "tier": 1 },
+        { "id": "health", "tier": 2 }
+      ],
+      "uniqueAffix": {
+        "name": "Holy Light",
+        "description": "Attacks deal 10% bonus damage as Holy",
+        "stat": "holyDamage",
+        "value": 10
+      },
+      "flavor": "The legendary blade of kings, imbued with divine power."
+    },
+    {
+      "id": "shadowfang",
+      "baseName": "Shadowfang",
+      "baseItem": "axe_iron",
+      "fixedAffixes": [
+        { "id": "swiftness", "tier": 1 },
+        { "id": "might", "tier": 0 }
+      ],
+      "uniqueAffix": {
+        "name": "Life Steal",
+        "description": "Gain 5% of damage dealt as health",
+        "stat": "lifeSteal",
+        "value": 5
+      },
+      "flavor": "Forged in eternal darkness, it hungers for blood."
+    }
+  ]
+}

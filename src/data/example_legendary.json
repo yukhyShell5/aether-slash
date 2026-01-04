@@ -1,0 +1,55 @@
+{
+  "example": "This is an example of a generated legendary item",
+  "generatedItem": {
+    "baseItemId": "sword_steel",
+    "name": "Legendary Mighty Steel Sword of the Bear",
+    "rarity": 3,
+    "level": 15,
+    "affixes": [
+      {
+        "id": "strength",
+        "value": 8
+      },
+      {
+        "id": "might",
+        "value": 18
+      },
+      {
+        "id": "health",
+        "value": 35
+      },
+      {
+        "id": "swiftness",
+        "value": 10
+      },
+      {
+        "id": "armor",
+        "value": 8
+      }
+    ],
+    "baseStats": {
+      "damageMin": 12,
+      "damageMax": 22
+    },
+    "totalStats": {
+      "comment": "Combined base stats + affix bonuses",
+      "damageMin": 12,
+      "damageMax": 22,
+      "strength": "+8",
+      "damagePercent": "+18%",
+      "maxHealth": "+35",
+      "attackSpeed": "+10%",
+      "armor": "+8"
+    }
+  },
+  "explanation": {
+    "rarityValues": {
+      "0": "Common (grey)",
+      "1": "Magic (blue)",
+      "2": "Rare (yellow)",
+      "3": "Legendary (orange)"
+    },
+    "affixRolling": "Items roll 0-6 affixes based on rarity tier. Each affix has tiered value ranges based on item level.",
+    "dropChance": "Base 30% drop chance + 1% per monster level. Legendary base weight is 3% of all drops."
+  }
+}

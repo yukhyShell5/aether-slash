@@ -1,0 +1,53 @@
+{
+  "monsters": [
+    {
+      "id": "skeleton_basic",
+      "name": "Skeleton Warrior",
+      "type": "undead",
+      "stats": {
+        "health": 50,
+        "armor": 5,
+        "damage": { "min": 3, "max": 7 },
+        "attackSpeed": 1.0,
+        "moveSpeed": 3.0
+      },
+      "drops": [
+        { "itemId": "sword_basic", "chance": 0.1 },
+        { "itemId": "potion_health", "chance": 0.3 }
+      ],
+      "experienceReward": 25
+    },
+    {
+      "id": "zombie_basic",
+      "name": "Shambling Zombie",
+      "type": "undead",
+      "stats": {
+        "health": 80,
+        "armor": 2,
+        "damage": { "min": 5, "max": 12 },
+        "attackSpeed": 0.7,
+        "moveSpeed": 1.5
+      },
+      "drops": [
+        { "itemId": "helmet_leather", "chance": 0.05 },
+        { "itemId": "potion_health", "chance": 0.4 }
+      ],
+      "experienceReward": 35
+    },
+    {
+      "id": "demon_fire",
+      "name": "Fire Imp",
+      "type": "demon",
+      "stats": {
+        "health": 30,
+        "armor": 0,
+        "damage": { "min": 8, "max": 15 },
+        "attackSpeed": 1.5,
+        "moveSpeed": 5.0
+      },
+      "abilities": ["fireball"],
+      "drops": [],
+      "experienceReward": 40
+    }
+  ]
+}

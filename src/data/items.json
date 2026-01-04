@@ -1,0 +1,37 @@
+{
+  "items": [
+    {
+      "id": "sword_basic",
+      "name": "Iron Sword",
+      "type": "weapon",
+      "slot": "mainhand",
+      "stats": {
+        "damage": { "min": 5, "max": 10 },
+        "attackSpeed": 1.2
+      },
+      "rarity": "common"
+    },
+    {
+      "id": "helmet_leather",
+      "name": "Leather Cap",
+      "type": "armor",
+      "slot": "head",
+      "stats": {
+        "armor": 5,
+        "health": 10
+      },
+      "rarity": "common"
+    },
+    {
+      "id": "potion_health",
+      "name": "Health Potion",
+      "type": "consumable",
+      "effect": {
+        "type": "heal",
+        "amount": 50
+      },
+      "stackable": true,
+      "maxStack": 20
+    }
+  ]
+}
