@@ -6,6 +6,7 @@ import {
   ItemDataStore,
   type ItemData 
 } from './components';
+import { getTalentBonuses } from '../stores/talents';
 import lootTables from '../data/loot_tables.json';
 
 /**
@@ -159,13 +160,14 @@ function getEquippedGearStats(playerEid: EntityId): Partial<FinalStats> {
 }
 
 /**
- * Calculate final stats by combining base stats + gear + derived bonuses
+ * Calculate final stats by combining base stats + gear + talents + derived bonuses
  */
 export function calculateFinalStats(playerEid: EntityId): FinalStats {
   const base = getBaseStats(playerEid);
   const gear = getEquippedGearStats(playerEid);
+  const talentBonuses = getTalentBonuses();
   
-  // Combine base and gear
+  // Combine base and gear (flat values)
   const combined: FinalStats = {
     maxHealth: base.maxHealth + (gear.maxHealth || 0),
     maxMana: base.maxMana + (gear.maxMana || 0),
@@ -184,6 +186,13 @@ export function calculateFinalStats(playerEid: EntityId): FinalStats {
     moveSpeed: base.moveSpeed + (gear.moveSpeed || 0),
   };
   
+  // Apply talent flat bonuses
+  for (const [stat, bonus] of Object.entries(talentBonuses)) {
+    if (stat in combined) {
+      (combined as unknown as Record<string, number>)[stat] += bonus.flat;
+    }
+  }
+  
   // Apply vitality bonus to health (10 HP per vitality)
   combined.maxHealth += combined.vitality * 10;
   
@@ -192,10 +201,25 @@ export function calculateFinalStats(playerEid: EntityId): FinalStats {
   combined.damageMin *= strengthBonus;
   combined.damageMax *= strengthBonus;
   
-  // Apply damage percent bonus
-  const damageMultiplier = 1 + (combined.damagePercent / 100);
+  // Apply damage percent bonus (from gear + talents)
+  const damagePercentBonus = combined.damagePercent + (talentBonuses.damagePercent?.percent || 0);
+  const damageMultiplier = 1 + (damagePercentBonus / 100);
   combined.damageMin *= damageMultiplier;
   combined.damageMax *= damageMultiplier;
+  
+  // Apply talent percent bonuses
+  if (talentBonuses.maxHealth?.percent) {
+    combined.maxHealth *= 1 + (talentBonuses.maxHealth.percent / 100);
+  }
+  if (talentBonuses.attackSpeed?.percent) {
+    combined.attackSpeed *= 1 + (talentBonuses.attackSpeed.percent / 100);
+  }
+  if (talentBonuses.critChance?.percent) {
+    combined.critChance += talentBonuses.critChance.percent;
+  }
+  if (talentBonuses.critDamage?.percent) {
+    combined.critDamage += talentBonuses.critDamage.percent;
+  }
   
   return combined;
 }
@@ -211,4 +235,24 @@ export function applyFinalStats(playerEid: EntityId, stats: FinalStats): void {
   CombatStats.armor[playerEid] = stats.armor;
   CombatStats.attackSpeed[playerEid] = stats.attackSpeed;
   CombatStats.attackRange[playerEid] = stats.attackRange;
+}
+
+/**
+ * Sync final stats to Svelte player store
+ */
+export function syncStatsToStore(stats: FinalStats): void {
+  // Import dynamically to avoid circular deps
+  import('../stores/player').then(({ playerStats }) => {
+    playerStats.set({
+      strength: Math.round(stats.strength),
+      vitality: Math.round(stats.vitality),
+      attackSpeed: stats.attackSpeed,
+      damageMin: Math.round(stats.damageMin),
+      damageMax: Math.round(stats.damageMax),
+      armor: Math.round(stats.armor),
+      moveSpeed: stats.moveSpeed,
+      critChance: stats.critChance,
+      critDamage: stats.critDamage,
+    });
+  });
 }

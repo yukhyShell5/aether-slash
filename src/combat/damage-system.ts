@@ -9,11 +9,14 @@ import {
   hasCombatState,
   hasTarget,
   hasPosition,
+  hasPlayer,
+  hasMonster,
   clearEntityComponents,
 } from '../core/components';
 import { getGameWorld } from '../core/world';
 import { consumeAttackEvents, type AttackEvent } from './combat-system';
 import { removeEntityHitbox } from './physics';
+import { gainXP, calculateMonsterXP, hasProgression } from '../core/progression';
 
 /**
  * Event emitted when an entity dies
@@ -125,6 +128,12 @@ function applyDamage(event: AttackEvent): void {
       position: pos,
       level: CombatStats.level[target],
     });
+    
+    // Grant XP to killer if player killed a monster
+    if (hasPlayer(attacker) && hasMonster(target) && hasProgression(attacker)) {
+      const xpReward = calculateMonsterXP(CombatStats.level[target]);
+      gainXP(attacker, xpReward);
+    }
   }
 }
 

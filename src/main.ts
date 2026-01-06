@@ -24,6 +24,11 @@ import {
   hasItemDrop,
   clearEntityComponents,
   moveToTargetSystem,
+  entitySeparationSystem,
+  // Progression
+  addProgressionComponent,
+  // Equipment
+  initEquipmentSlots,
   type EntityId,
 } from './core';
 import { GameScene, RenderObjectPool, createRenderSystem, HealthBarPool, createHealthBarSystem, FloatingTextPool, CSS2DManager } from './render';
@@ -32,9 +37,11 @@ import {
   combatSystem, 
   cooldownSystem, 
   damageSystem, 
+  regenerationSystem,
   deathCleanupSystem,
   onEntityDestroyed,
   consumeDamageEvents,
+  enemyAISystem,
 } from './combat';
 import { lootSystem, initItemRenderer, ItemDropPool, createItemDropRenderSystem } from './loot';
 import { mount } from 'svelte';
@@ -100,6 +107,13 @@ function createPlayer(): EntityId {
   CombatStats.damageMax[eid] = 20;
   CombatStats.armor[eid] = 5;
   CombatStats.level[eid] = 1;
+  CombatStats.healthRegen[eid] = 5; // 5 HP per second
+  
+  // Progression (XP/Level system)
+  addProgressionComponent(eid, 1);
+  
+  // Equipment slots
+  initEquipmentSlots(eid);
   
   return eid;
 }
@@ -359,6 +373,9 @@ async function init(): Promise<void> {
     // Update cooldowns
     cooldownSystem(entities, deltaTime);
     
+    // Enemy AI - detect and target player
+    enemyAISystem(entities, playerEid, deltaTime);
+    
     // Combat logic
     combatSystem(entities, deltaTime);
     
@@ -380,8 +397,14 @@ async function init(): Promise<void> {
     // Update floating text animations
     floatingTextPool?.update(deltaTime);
     
+    // Health regeneration
+    regenerationSystem(entities, deltaTime);
+    
     // Movement
     moveToTargetSystem(entities, deltaTime);
+    
+    // Prevent entity overlapping
+    entitySeparationSystem(entities, deltaTime);
     
     // Handle deaths and spawn loot
     const dead = deathCleanupSystem(entities);
@@ -396,6 +419,16 @@ async function init(): Promise<void> {
     
     // Render CSS2D layer (floating text)
     css2dManager?.render(gameScene!.scene, gameScene!.isometricCamera.camera);
+    
+    // Update camera to follow player
+    if (playerEid !== null) {
+      gameScene!.isometricCamera.setTarget(
+        Position.x[playerEid],
+        Position.y[playerEid],
+        Position.z[playerEid]
+      );
+      gameScene!.isometricCamera.update(deltaTime);
+    }
     
     // Update player UI
     if (playerEid !== null && uiApp?.updatePlayerHealth) {

@@ -1,5 +1,6 @@
 <script lang="ts">
   import HealthBar from './HealthBar.svelte';
+  import ExperienceBar from './ExperienceBar.svelte';
   import Inventory from './Inventory.svelte';
   import { onMount } from 'svelte';
 
@@ -34,6 +35,7 @@
 
 <div class="game-ui" style="pointer-events: none !important;">
   <HealthBar bind:this={healthBarComponent} />
+  <ExperienceBar />
   <Inventory bind:this={inventoryComponent} />
 </div>
 

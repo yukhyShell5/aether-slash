@@ -16,6 +16,11 @@ export class IsometricCamera {
   private shakeTimer = 0;
   private basePosition = new THREE.Vector3();
 
+  // Target tracking
+  private target = new THREE.Vector3(0, 0, 0);
+  private currentLookAt = new THREE.Vector3(0, 0, 0);
+  private readonly followSmoothing = 8.0; // Higher = faster follow
+
   constructor(aspect: number) {
     const frustumSize = this.zoom;
     this.camera = new THREE.OrthographicCamera(
@@ -32,15 +37,37 @@ export class IsometricCamera {
   private updateCameraPosition(): void {
     const distance = 50;
     
-    // Calculate position using spherical coordinates
-    const x = distance * Math.cos(this.tiltAngle) * Math.sin(this.rotationAngle);
-    const y = distance * Math.sin(this.tiltAngle);
-    const z = distance * Math.cos(this.tiltAngle) * Math.cos(this.rotationAngle);
+    // Calculate position using spherical coordinates relative to target
+    const x = this.currentLookAt.x + distance * Math.cos(this.tiltAngle) * Math.sin(this.rotationAngle);
+    const y = this.currentLookAt.y + distance * Math.sin(this.tiltAngle);
+    const z = this.currentLookAt.z + distance * Math.cos(this.tiltAngle) * Math.cos(this.rotationAngle);
     
     this.basePosition.set(x, y, z);
     this.camera.position.copy(this.basePosition);
-    this.camera.lookAt(0, 0, 0);
+    this.camera.lookAt(this.currentLookAt);
     this.camera.updateProjectionMatrix();
+  }
+
+  /**
+   * Set the target position for the camera to follow
+   */
+  setTarget(x: number, y: number, z: number): void {
+    this.target.set(x, y, z);
+  }
+
+  /**
+   * Update camera position to follow target (call each frame)
+   */
+  update(deltaTime: number): void {
+    // Smooth follow - lerp towards target
+    const t = Math.min(1, this.followSmoothing * deltaTime);
+    this.currentLookAt.lerp(this.target, t);
+    
+    // Update camera position
+    this.updateCameraPosition();
+    
+    // Update shake
+    this.updateShake(deltaTime);
   }
 
   /**
@@ -93,7 +120,7 @@ export class IsometricCamera {
    * Update camera shake (call each frame)
    * @param deltaTime Time since last frame in seconds
    */
-  updateShake(deltaTime: number): void {
+  private updateShake(deltaTime: number): void {
     if (this.shakeTimer <= 0) return;
 
     this.shakeTimer -= deltaTime;

@@ -63,6 +63,7 @@ export const CombatStats = {
   damageMax: new Float32Array(MAX_ENTITIES),
   armor: new Float32Array(MAX_ENTITIES),
   level: new Uint16Array(MAX_ENTITIES),
+  healthRegen: new Float32Array(MAX_ENTITIES),    // HP per second
 };
 
 /**

@@ -19,3 +19,20 @@ export {
   findEmptySlot,
   type InventorySlot,
 } from './inventory';
+
+export {
+  equippedItems,
+  updateEquipmentStore,
+  hasWeaponEquipped,
+  equippedWeapon,
+  equippedArmor,
+  type EquipmentSlotState,
+} from './equipment';
+
+export {
+  talents,
+  allocateTalentPoint,
+  resetTalents,
+  getTalentBonuses,
+  type TalentNode,
+} from './talents';

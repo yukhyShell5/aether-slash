@@ -7,8 +7,13 @@ import {
   hasPosition,
   hasVelocity,
   hasMoveTarget,
-  hasSpeed 
+  hasSpeed,
+  hasMonster,
 } from './components';
+
+// Collision radius for entities
+const ENTITY_RADIUS = 0.8;
+const SEPARATION_STRENGTH = 5.0;
 
 /**
  * Movement System - applies velocity to position
@@ -69,5 +74,57 @@ export function moveToTargetSystem(entities: Set<EntityId>, deltaTime: number): 
     Position.x[eid] += dx * ratio;
     Position.y[eid] += dy * ratio;
     Position.z[eid] += dz * ratio;
+  }
+}
+
+/**
+ * Entity Separation System - prevents entities from overlapping
+ * Pushes monsters apart when they get too close to each other
+ */
+export function entitySeparationSystem(entities: Set<EntityId>, deltaTime: number): void {
+  const monsterList: EntityId[] = [];
+  
+  // Collect all monsters
+  for (const eid of entities) {
+    if (hasMonster(eid) && hasPosition(eid)) {
+      monsterList.push(eid);
+    }
+  }
+  
+  // Check each pair for overlap
+  for (let i = 0; i < monsterList.length; i++) {
+    const eid1 = monsterList[i];
+    const x1 = Position.x[eid1];
+    const z1 = Position.z[eid1];
+    
+    for (let j = i + 1; j < monsterList.length; j++) {
+      const eid2 = monsterList[j];
+      const x2 = Position.x[eid2];
+      const z2 = Position.z[eid2];
+      
+      // Calculate distance (2D, ignoring Y)
+      const dx = x2 - x1;
+      const dz = z2 - z1;
+      const distance = Math.sqrt(dx * dx + dz * dz);
+      
+      const minDistance = ENTITY_RADIUS * 2;
+      
+      // If overlapping, push apart
+      if (distance < minDistance && distance > 0.01) {
+        const overlap = minDistance - distance;
+        const pushStrength = overlap * SEPARATION_STRENGTH * deltaTime;
+        
+        // Normalize direction
+        const nx = dx / distance;
+        const nz = dz / distance;
+        
+        // Push both entities apart equally
+        const push = pushStrength / 2;
+        Position.x[eid1] -= nx * push;
+        Position.z[eid1] -= nz * push;
+        Position.x[eid2] += nx * push;
+        Position.z[eid2] += nz * push;
+      }
+    }
   }
 }

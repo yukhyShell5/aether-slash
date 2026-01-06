@@ -1,7 +1,7 @@
-// Combat system exports
-export { initPhysics, getPhysicsWorld, createEntityHitbox, syncEntityHitbox, removeEntityHitbox, getDistanceBetween, isInRange, stepPhysics, disposePhysics } from './physics';
-export { combatSystem, cooldownSystem, consumeAttackEvents } from './combat-system';
-export type { AttackEvent } from './combat-system';
-export { damageSystem, deathCleanupSystem, onEntityDestroyed, consumeDeathEvents, consumeDamageEvents } from './damage-system';
-export type { DeathEvent, DamageEvent } from './damage-system';
+// Combat systems barrel export
+export { combatSystem, cooldownSystem, type AttackEvent, consumeAttackEvents } from './combat-system';
+export { damageSystem, deathCleanupSystem, consumeDamageEvents, onEntityDestroyed, type DeathEvent, type DamageEvent } from './damage-system';
+export { enemyAISystem } from './enemy-ai-system';
+export { initPhysics, createEntityHitbox, removeEntityHitbox, stepPhysics, getPhysicsWorld, syncEntityHitbox, getDistanceBetween, isInRange, disposePhysics } from './physics';
+export { regenerationSystem } from './regeneration-system';
 export { HitFlash, triggerHitFlash, hasHitFlash, hitFlashSystem, cleanupHitFlash } from './hit-flash';

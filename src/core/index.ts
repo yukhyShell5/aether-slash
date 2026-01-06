@@ -61,6 +61,30 @@ export {
 export type { ItemData, Rarity } from './components';
 
 // Systems
-export { movementSystem, moveToTargetSystem } from './systems';
+export { movementSystem, moveToTargetSystem, entitySeparationSystem } from './systems';
 export { uiSystem, resetUISystem } from './ui-system';
-export { calculateFinalStats, applyFinalStats, type FinalStats } from './stat-calculator';
+export { calculateFinalStats, applyFinalStats, syncStatsToStore, type FinalStats } from './stat-calculator';
+
+// Progression
+export {
+  Progression,
+  addProgressionComponent,
+  hasProgression,
+  gainXP,
+  xpForNextLevel,
+  calculateMonsterXP,
+  getProgressionState,
+  spendTalentPoint,
+  consumeLevelUpEvents,
+} from './progression';
+
+// Equipment
+export {
+  equipItem,
+  unequipItem,
+  getEquippedItems,
+  getSlotForItem,
+  getSlotName,
+  hasItemEquipped,
+  onEquipmentChanged,
+} from './equipment-system';
