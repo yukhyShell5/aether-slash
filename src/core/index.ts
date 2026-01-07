@@ -66,7 +66,7 @@ export type { ItemData, Rarity } from './components';
 // Systems
 export { movementSystem, moveToTargetSystem, entitySeparationSystem } from './systems';
 export { uiSystem, resetUISystem } from './ui-system';
-export { calculateFinalStats, applyFinalStats, syncStatsToStore, type FinalStats } from './stat-calculator';
+export { recalculateStats } from './stat-calculator';
 
 // Progression
 export {

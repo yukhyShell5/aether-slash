@@ -4,7 +4,7 @@
   import InventoryPanel from './InventoryPanel.svelte';
   import TalentTree from './TalentTree.svelte';
   import { onMount } from 'svelte';
-  import { calculateFinalStats, applyFinalStats, syncStatsToStore } from '../core/stat-calculator';
+  import { recalculateStats, syncStatsToStore } from '../core/stat-calculator';
   import { getEquippedItems, onEquipmentChanged } from '../core/equipment-system';
   import { updateEquipmentStore } from '../stores/equipment';
 
@@ -35,9 +35,8 @@
   function handleStatsRecalc() {
     if (playerEid === null) return;
     
-    const finalStats = calculateFinalStats(playerEid);
-    applyFinalStats(playerEid, finalStats);
-    syncStatsToStore(finalStats);
+    recalculateStats(playerEid);
+    syncStatsToStore(playerEid);
     
     // Refresh equipment display
     const items = getEquippedItems(playerEid);
@@ -70,6 +69,9 @@
   onMount(() => {
     // Register global callback for stats/equipment changes
     onEquipmentChanged(handleStatsRecalc);
+    
+    // Initial sync
+    handleStatsRecalc();
     
     document.addEventListener('keydown', handleKeydown);
     return () => document.removeEventListener('keydown', handleKeydown);

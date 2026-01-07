@@ -217,6 +217,7 @@ export function getProgressionState(eid: EntityId): {
   };
 }
 
+
 /**
  * Spend a talent point
  * @returns true if successful
@@ -227,4 +228,44 @@ export function spendTalentPoint(eid: EntityId): boolean {
   
   Progression.talentPoints[eid] -= 1;
   return true;
+}
+
+/**
+ * Restore stats based on level (used when loading save)
+ */
+export function restoreLevelStats(eid: EntityId, level: number): void {
+  const levelsGained = level - 1;
+  if (levelsGained <= 0) return;
+
+  if (hasPlayer(eid)) {
+      // Update BaseStats
+      BaseStats.maxHp[eid] += HP_PER_LEVEL * levelsGained;
+      BaseStats.damageMin[eid] += DAMAGE_PER_LEVEL * levelsGained;
+      BaseStats.damageMax[eid] += DAMAGE_PER_LEVEL * levelsGained;
+      
+      // Update CombatStats max values (current HP will be overwritten by save data)
+      CombatStats.maxHp[eid] = BaseStats.maxHp[eid]; // Assumes no gear yet? 
+      // Actually triggerStatRecalc should handle Gear + Base -> CombatStats
+      
+      CombatStats.level[eid] = level;
+      
+      triggerStatRecalc(eid);
+  }
+}
+
+/**
+ * Sync XP store with ECS components
+ */
+export function syncXPToStore(eid: EntityId): void {
+  if (!hasPlayer(eid) || !hasProgression(eid)) return;
+  
+  const currentLevel = Progression.level[eid];
+  const currentXP = Progression.xp[eid];
+  const requiredXP = xpForNextLevel(currentLevel);
+  
+  playerExperience.set({
+    current: currentXP,
+    toNextLevel: requiredXP,
+    level: currentLevel,
+  });
 }

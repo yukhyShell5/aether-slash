@@ -22,6 +22,7 @@ import {
   addCombatStateComponent,
   hasMonster,
   hasItemDrop,
+  hasTarget,
   clearEntityComponents,
   moveToTargetSystem,
   entitySeparationSystem,
@@ -37,6 +38,7 @@ import {
 import { GameScene, RenderObjectPool, createRenderSystem, HealthBarPool, createHealthBarSystem, FloatingTextPool, CSS2DManager, LevelUpVFX } from './render';
 import { 
   initPhysics, 
+  getPhysicsWorld, 
   combatSystem, 
   cooldownSystem, 
   damageSystem, 
@@ -47,11 +49,17 @@ import {
   enemyAISystem,
 } from './combat';
 import { lootSystem, initItemRenderer, ItemDropPool, createItemDropRenderSystem } from './loot';
+import { DungeonGenerator, TileType } from './core/dungeon-generator';
+import { DungeonRenderer } from './render/dungeon-renderer';
+import { saveCharacter, loadCharacter } from './core/persistence';
+import { MapStore } from './core/map-store';
+import RAPIER from '@dimforge/rapier3d-compat';
 import { mount } from 'svelte';
 import App from './ui/App.svelte';
 import { addItemToInventory } from './stores/inventory';
 import './style.css';
 import * as THREE from 'three';
+import { clearPath } from './core/path-store';
 
 let gameScene: GameScene | null = null;
 let objectPool: RenderObjectPool | null = null;
@@ -60,6 +68,7 @@ let healthBarPool: HealthBarPool | null = null;
 let floatingTextPool: FloatingTextPool | null = null;
 let css2dManager: CSS2DManager | null = null;
 let levelUpVFX: LevelUpVFX | null = null;
+let dungeonRenderer: DungeonRenderer | null = null;
 let playerEid: EntityId | null = null;
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 let uiApp: any = null;
@@ -259,6 +268,14 @@ function setupClickHandler(scene: GameScene): void {
             MoveTarget.y[playerEid] = 0;
             MoveTarget.z[playerEid] = iz;
             MoveTarget.active[playerEid] = 1;
+            
+            // Clear existing path to force recalculation
+            clearPath(playerEid);
+            
+            // Clear target entity if any
+            if (hasTarget(playerEid)) {
+              Target.entityId[playerEid] = -1;
+            }
             // console.log('📦 Moving to pick up item');
             return;
           }
@@ -368,10 +385,62 @@ async function init(): Promise<void> {
   // Create player
   playerEid = createPlayer();
   
-  // Spawn test monsters
-  spawnMonster(5, 5, 1);
-  spawnMonster(-4, 3, 2);
-  spawnMonster(0, -6, 1);
+  // Generate Dungeon
+  const dungeonGen = new DungeonGenerator(80, 80);
+  console.time('MapGeneration');
+  const dungeonData = dungeonGen.generate();
+  console.timeEnd('MapGeneration');
+  
+  // Init MapStore for collision
+  MapStore.init(dungeonData.width, dungeonData.height, dungeonData.tiles);
+
+  // Render Dungeon
+  dungeonRenderer = new DungeonRenderer(gameScene.scene);
+  dungeonRenderer.generateMesh(dungeonData);
+
+  // Setup Physics Colliders for Walls
+  const physicsWorld = getPhysicsWorld();
+  const wallColliderDesc = RAPIER.ColliderDesc.cuboid(0.5, 1, 0.5); // 1x2x1 wall
+  
+  // Optimize: In a real app we'd merge colliders. Here we create one per wall tile for simplicity.
+  // Given 50x50 map, worst case 2500 colliders (acceptable for Rapier).
+  for (let y = 0; y < dungeonData.height; y++) {
+    for (let x = 0; x < dungeonData.width; x++) {
+       if (dungeonData.tiles[y][x] === TileType.WALL) {
+           const posX = x - dungeonData.width / 2;
+           const posZ = y - dungeonData.height / 2;
+           
+           const wallBodyDesc = RAPIER.RigidBodyDesc.fixed()
+                .setTranslation(posX, 1, posZ);
+           const wallBody = physicsWorld.createRigidBody(wallBodyDesc);
+           physicsWorld.createCollider(wallColliderDesc, wallBody);
+       }
+    }
+  }
+
+  // Set Player Position (default from dungeon)
+  Position.x[playerEid] = dungeonData.playerStart.x - dungeonData.width / 2;
+  Position.z[playerEid] = dungeonData.playerStart.y - dungeonData.height / 2;
+
+  // Try to Load Saved Character (Overwrites position if found)
+  await loadCharacter(playerEid, 'local-player');
+
+  // Force update camera to player immediately
+  if (gameScene) {
+      gameScene.isometricCamera.setTarget(
+        Position.x[playerEid],
+        Position.y[playerEid],
+        Position.z[playerEid]
+      );
+  }
+
+  // Spawn Monsters
+  for (const spawn of dungeonData.enemySpawns) {
+      const mx = spawn.x - dungeonData.width / 2;
+      const mz = spawn.y - dungeonData.height / 2;
+      // Random level based on distance from center? Or just random.
+      spawnMonster(mx, mz, Math.floor(Math.random() * 3) + 1);
+  }
 
   // Setup click handler for targeting
   setupClickHandler(gameScene);
@@ -446,16 +515,8 @@ async function init(): Promise<void> {
     if (dead.length > 0) {
       lootSystem();
     }
-    
-    // Render
-    renderSystem(entities);
-    healthBarSystem(entities);
-    itemDropRenderSystem(entities);
-    
-    // Render CSS2D layer (floating text)
-    css2dManager?.render(gameScene!.scene, gameScene!.isometricCamera.camera);
-    
-    // Update camera to follow player
+
+    // Update camera to follow player (BEFORE rendering)
     if (playerEid !== null) {
       gameScene!.isometricCamera.setTarget(
         Position.x[playerEid],
@@ -464,6 +525,14 @@ async function init(): Promise<void> {
       );
       gameScene!.isometricCamera.update(deltaTime);
     }
+    
+    // Render
+    renderSystem(entities);
+    healthBarSystem(entities);
+    itemDropRenderSystem(entities);
+    
+    // Render CSS2D layer (floating text)
+    css2dManager?.render(gameScene!.scene, gameScene!.isometricCamera.camera);
     
     // Update player UI
     if (playerEid !== null && uiApp?.updatePlayerHealth) {
@@ -483,6 +552,7 @@ async function init(): Promise<void> {
  */
 function setupCameraControls(scene: GameScene): void {
   document.addEventListener('keydown', (event: KeyboardEvent) => {
+    // console.log('Key pressed:', event.key);
     switch (event.key.toLowerCase()) {
       // Spawn new monster with 'M' key (debug)
       case 'm':
@@ -490,6 +560,21 @@ function setupCameraControls(scene: GameScene): void {
         const z = (Math.random() - 0.5) * 20;
         const level = Math.floor(Math.random() * 3) + 1;
         spawnMonster(x, z, level);
+        break;
+      // Quick Save with F9 or K
+      case 'f9':
+      case 'k':
+        if (playerEid !== null) {
+            console.log('Saving character...');
+            saveCharacter(playerEid, 'local-player')
+              .then(() => alert('Game Saved!'))
+              .catch(err => {
+                  console.error(err);
+                  alert('Save failed: ' + JSON.stringify(err, null, 2));
+              });
+        } else {
+            console.error('Player entity is null');
+        }
         break;
     }
   });
@@ -504,6 +589,7 @@ function setupCameraControls(scene: GameScene): void {
  * Cleanup on page unload
  */
 function cleanup(): void {
+  dungeonRenderer?.dispose();
   levelUpVFX?.dispose();
   itemDropPool?.dispose();
   objectPool?.dispose();
