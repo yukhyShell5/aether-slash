@@ -1,6 +1,7 @@
 import type { EntityId } from 'bitecs';
 import { 
-  CombatStats, 
+  CombatStats,
+  BaseStats,
   getEquippedItem, 
   EQUIPMENT_SLOT_COUNT, 
   ItemDataStore,
@@ -57,21 +58,21 @@ function createEmptyStats(): FinalStats {
 }
 
 /**
- * Get base stats from CombatStats component
+ * Get base stats from BaseStats component (the INITIAL stats, not modified by equipment)
  */
 function getBaseStats(eid: EntityId): FinalStats {
   return {
-    maxHealth: CombatStats.maxHp[eid],
-    maxMana: CombatStats.maxMp[eid],
-    damageMin: CombatStats.damageMin[eid],
-    damageMax: CombatStats.damageMax[eid],
-    armor: CombatStats.armor[eid],
-    attackSpeed: CombatStats.attackSpeed[eid],
-    attackRange: CombatStats.attackRange[eid],
+    maxHealth: BaseStats.maxHp[eid],
+    maxMana: BaseStats.maxMp[eid],
+    damageMin: BaseStats.damageMin[eid],
+    damageMax: BaseStats.damageMax[eid],
+    armor: BaseStats.armor[eid],
+    attackSpeed: BaseStats.attackSpeed[eid],
+    attackRange: BaseStats.attackRange[eid],
     strength: 0,
     vitality: 0,
     damagePercent: 0,
-    healthRegen: 0,
+    healthRegen: BaseStats.healthRegen[eid],
     critChance: 5, // Base 5% crit
     critDamage: 150, // Base 150% crit damage
     lifeSteal: 0,
@@ -229,7 +230,14 @@ export function calculateFinalStats(playerEid: EntityId): FinalStats {
  */
 export function applyFinalStats(playerEid: EntityId, stats: FinalStats): void {
   CombatStats.maxHp[playerEid] = stats.maxHealth;
+  if (CombatStats.hp[playerEid] > stats.maxHealth) {
+    CombatStats.hp[playerEid] = stats.maxHealth;
+  }
+  
   CombatStats.maxMp[playerEid] = stats.maxMana;
+  if (CombatStats.mp[playerEid] > stats.maxMana) {
+    CombatStats.mp[playerEid] = stats.maxMana;
+  }
   CombatStats.damageMin[playerEid] = stats.damageMin;
   CombatStats.damageMax[playerEid] = stats.damageMax;
   CombatStats.armor[playerEid] = stats.armor;
@@ -244,6 +252,8 @@ export function syncStatsToStore(stats: FinalStats): void {
   // Import dynamically to avoid circular deps
   import('../stores/player').then(({ playerStats }) => {
     playerStats.set({
+      maxHealth: Math.round(stats.maxHealth),
+      maxMana: Math.round(stats.maxMana),
       strength: Math.round(stats.strength),
       vitality: Math.round(stats.vitality),
       attackSpeed: stats.attackSpeed,
@@ -253,6 +263,8 @@ export function syncStatsToStore(stats: FinalStats): void {
       moveSpeed: stats.moveSpeed,
       critChance: stats.critChance,
       critDamage: stats.critDamage,
+      healthRegen: stats.healthRegen,
+      lifeSteal: stats.lifeSteal,
     });
   });
 }

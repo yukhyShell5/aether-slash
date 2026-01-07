@@ -244,7 +244,7 @@ export function lootSystem(): EntityId[] {
       );
       droppedItems.push(eid);
       
-      console.log(`💎 Dropped: ${item.name} (${RarityNames[item.rarity]})`);
+      // console.log(`💎 Dropped: ${item.name} (${RarityNames[item.rarity]})`);
     }
   }
   

@@ -39,7 +39,7 @@ export function pickupItem(
   onPickup?: (itemEid: EntityId) => void
 ): boolean {
   if (!canPickup(playerEid, itemEid)) {
-    console.log('📦 Too far to pick up');
+    // console.log('📦 Too far to pick up');
     return false;
   }
   
@@ -52,11 +52,11 @@ export function pickupItem(
   const slotIndex = addItemToInventory(itemEid, itemData);
   
   if (slotIndex === -1) {
-    console.log('📦 Inventory full!');
+    // console.log('📦 Inventory full!');
     return false;
   }
   
-  console.log(`📦 Picked up: ${itemData.name} (slot ${slotIndex})`);
+  // console.log(`📦 Picked up: ${itemData.name} (slot ${slotIndex})`);
   
   // Callback for cleanup
   if (onPickup) {
@@ -129,7 +129,7 @@ export function createPickupSystem(
         return true;
       }
     } else {
-      console.log('📦 Move closer to pick up');
+      // console.log('📦 Move closer to pick up');
     }
     
     return false;

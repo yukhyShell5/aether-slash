@@ -1,7 +1,15 @@
 <script lang="ts">
   import { inventorySlots, type InventorySlot } from '../stores/inventory';
   import { RarityEnum } from '../core/components';
+  import { equipItem, getSlotForItem } from '../core/equipment-system';
   import lootTables from '../data/loot_tables.json';
+  
+  interface Props {
+    playerEid: number | null;
+    onEquipmentChanged: (() => void) | null;
+  }
+  
+  let { playerEid = null, onEquipmentChanged = null }: Props = $props();
   
   let isOpen = $state(false);
   let hoveredSlot = $state<InventorySlot | null>(null);
@@ -68,6 +76,45 @@
   function handleMouseLeave() {
     hoveredSlot = null;
   }
+  
+  /**
+   * Get inventory slot index from the slot object
+   */
+  function getSlotIndex(targetSlot: InventorySlot): number {
+    let idx = -1;
+    inventorySlots.subscribe(slots => {
+      idx = slots.findIndex(s => s.itemEid === targetSlot.itemEid);
+    })();
+    return idx;
+  }
+  
+  /**
+   * Handle double-click to equip item
+   */
+  function handleEquip(slot: InventorySlot) {
+    if (!slot.itemData || playerEid === null) return;
+    
+    // Check if item can be equipped
+    const targetSlot = getSlotForItem(slot.itemData.baseItemId);
+    if (targetSlot === null) {
+      console.log('❌ Cet objet ne peut pas être équipé');
+      return;
+    }
+    
+    const slotIndex = getSlotIndex(slot);
+    if (slotIndex === -1) return;
+    
+    // Equip the item
+    if (equipItem(playerEid, slotIndex, targetSlot)) {
+      console.log(`✅ ${slot.itemData.name} équipé!`);
+      hoveredSlot = null;
+      
+      // Notify parent of equipment change
+      if (onEquipmentChanged) {
+        onEquipmentChanged();
+      }
+    }
+  }
 
   export function toggle() {
     isOpen = !isOpen;
@@ -96,8 +143,13 @@
         <div 
           class="inventory-slot" 
           class:filled={slot.itemData !== null}
+          class:equippable={slot.itemData !== null && getSlotForItem(slot.itemData.baseItemId) !== null}
+          role="button"
+          tabindex="0"
           onmouseenter={(e) => handleMouseEnter(e, slot)}
           onmouseleave={handleMouseLeave}
+          ondblclick={() => handleEquip(slot)}
+          onkeydown={(e) => e.key === 'Enter' && handleEquip(slot)}
         >
           {#if slot.itemData}
             <div class="item-icon" style="color: {getItemColor(slot)};">
@@ -112,7 +164,7 @@
       {/each}
     </div>
     <div class="inventory-tip">
-      Appuyez sur <kbd>I</kbd> pour fermer • Survolez un objet pour voir ses stats
+      <kbd>I</kbd> fermer • <strong>Double-clic</strong> pour équiper
     </div>
   </div>
   
@@ -240,6 +292,15 @@
   .inventory-slot.filled {
     border-color: #5a7a5a;
     background: rgba(34, 197, 94, 0.1);
+  }
+  
+  .inventory-slot.equippable {
+    cursor: pointer;
+  }
+  
+  .inventory-slot.equippable:hover {
+    border-color: #4a9eff;
+    box-shadow: 0 0 12px rgba(74, 158, 255, 0.4);
   }
 
   .item-icon {

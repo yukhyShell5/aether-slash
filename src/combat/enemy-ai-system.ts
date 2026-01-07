@@ -53,7 +53,7 @@ export function enemyAISystem(
         // Aggro! Target the player
         Target.entityId[eid] = playerEid;
         CombatState.state[eid] = CombatStateEnum.MOVING_TO_TARGET;
-        console.log(`👹 Monster ${eid} aggro on player! Distance: ${distanceToPlayer.toFixed(1)}`);
+        // console.log(`👹 Monster ${eid} aggro on player! Distance: ${distanceToPlayer.toFixed(1)}`);
       }
     } else {
       // Has a target - check leash range
@@ -61,7 +61,7 @@ export function enemyAISystem(
         // Too far, give up chase
         Target.entityId[eid] = -1;
         CombatState.state[eid] = CombatStateEnum.IDLE;
-        console.log(`👹 Monster ${eid} lost interest (leash)`);
+        // console.log(`👹 Monster ${eid} lost interest (leash)`);
       }
     }
   }

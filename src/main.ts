@@ -27,11 +27,14 @@ import {
   entitySeparationSystem,
   // Progression
   addProgressionComponent,
+  consumeLevelUpEvents,
   // Equipment
   initEquipmentSlots,
+  // Base stats
+  initBaseStats,
   type EntityId,
 } from './core';
-import { GameScene, RenderObjectPool, createRenderSystem, HealthBarPool, createHealthBarSystem, FloatingTextPool, CSS2DManager } from './render';
+import { GameScene, RenderObjectPool, createRenderSystem, HealthBarPool, createHealthBarSystem, FloatingTextPool, CSS2DManager, LevelUpVFX } from './render';
 import { 
   initPhysics, 
   combatSystem, 
@@ -56,6 +59,7 @@ let itemDropPool: ItemDropPool | null = null;
 let healthBarPool: HealthBarPool | null = null;
 let floatingTextPool: FloatingTextPool | null = null;
 let css2dManager: CSS2DManager | null = null;
+let levelUpVFX: LevelUpVFX | null = null;
 let playerEid: EntityId | null = null;
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 let uiApp: any = null;
@@ -108,6 +112,18 @@ function createPlayer(): EntityId {
   CombatStats.armor[eid] = 5;
   CombatStats.level[eid] = 1;
   CombatStats.healthRegen[eid] = 5; // 5 HP per second
+  
+  // Store initial base stats (used for stat recalculation)
+  initBaseStats(eid, {
+    maxHp: 100,
+    maxMp: 50,
+    attackSpeed: 1.5,
+    attackRange: 2.0,
+    damageMin: 10,
+    damageMax: 20,
+    armor: 5,
+    healthRegen: 5,
+  });
   
   // Progression (XP/Level system)
   addProgressionComponent(eid, 1);
@@ -162,7 +178,7 @@ function spawnMonster(x: number, z: number, level: number = 1): EntityId {
   CombatStats.armor[eid] = level * 2;
   CombatStats.level[eid] = level;
   
-  console.log(`👹 Monster spawned at (${x}, ${z}) - Level ${level}, HP: ${CombatStats.hp[eid]}`);
+  // console.log(`👹 Monster spawned at (${x}, ${z}) - Level ${level}, HP: ${CombatStats.hp[eid]}`);
   
   return eid;
 }
@@ -208,7 +224,7 @@ function setupClickHandler(scene: GameScene): void {
         const iz = Position.z[eid];
         const distToClick = Math.sqrt((clickPoint.x - ix) ** 2 + (clickPoint.z - iz) ** 2);
         
-        console.log(`🔍 Item ${eid} at (${ix.toFixed(1)}, ${iz.toFixed(1)}), click at (${clickPoint.x.toFixed(1)}, ${clickPoint.z.toFixed(1)}), dist=${distToClick.toFixed(2)}`);
+        // console.log(`🔍 Item ${eid} at (${ix.toFixed(1)}, ${iz.toFixed(1)}), click at (${clickPoint.x.toFixed(1)}, ${clickPoint.z.toFixed(1)}), dist=${distToClick.toFixed(2)}`);
         
         if (distToClick < 1.5) {
           // Clicked on item - check if player is close enough
@@ -216,7 +232,7 @@ function setupClickHandler(scene: GameScene): void {
           const pz = Position.z[playerEid];
           const distToPlayer = Math.sqrt((px - ix) ** 2 + (pz - iz) ** 2);
           
-          console.log(`📍 Player at (${px.toFixed(1)}, ${pz.toFixed(1)}), dist to item=${distToPlayer.toFixed(2)}`);
+          // console.log(`📍 Player at (${px.toFixed(1)}, ${pz.toFixed(1)}), dist to item=${distToPlayer.toFixed(2)}`);
           
           if (distToPlayer <= 2.5) {
             // Pick up the item
@@ -224,18 +240,18 @@ function setupClickHandler(scene: GameScene): void {
             if (itemData) {
               const slotIndex = addItemToInventory(eid, itemData);
               if (slotIndex >= 0) {
-                console.log(`📦 Picked up: ${itemData.name}`);
+                // console.log(`📦 Picked up: ${itemData.name}`);
                 // Remove item from world
                 itemDropPool?.removeItemDrop(eid);
                 clearEntityComponents(eid);
                 gameWorld.destroyEntity(eid);
                 return;
               } else {
-                console.log('📦 Inventory full!');
+                // console.log('📦 Inventory full!');
                 return;
               }
             } else {
-              console.log('⚠️ No item data for eid', eid);
+              // console.log('⚠️ No item data for eid', eid);
             }
           } else {
             // Move towards item
@@ -243,7 +259,7 @@ function setupClickHandler(scene: GameScene): void {
             MoveTarget.y[playerEid] = 0;
             MoveTarget.z[playerEid] = iz;
             MoveTarget.active[playerEid] = 1;
-            console.log('📦 Moving to pick up item');
+            // console.log('📦 Moving to pick up item');
             return;
           }
         }
@@ -255,7 +271,7 @@ function setupClickHandler(scene: GameScene): void {
           if (hasItemDrop(eid)) itemCount++;
         }
         if (itemCount > 0) {
-          console.log(`📍 ${itemCount} items exist but none clicked`);
+          // console.log(`📍 ${itemCount} items exist but none clicked`);
         }
       }
     }
@@ -280,7 +296,7 @@ function setupClickHandler(scene: GameScene): void {
         // Clicked on monster - set as target
         Target.entityId[playerEid] = eid;
         CombatState.state[playerEid] = CombatStateEnum.MOVING_TO_TARGET;
-        console.log(`⚔️ Targeting monster ${eid}`);
+        // console.log(`⚔️ Targeting monster ${eid}`);
         return;
       }
     }
@@ -304,7 +320,7 @@ function setupClickHandler(scene: GameScene): void {
     if (playerEid !== null) {
       Target.entityId[playerEid] = -1;
       CombatState.state[playerEid] = CombatStateEnum.IDLE;
-      console.log('🎯 Target cleared');
+      // console.log('🎯 Target cleared');
     }
   });
 }
@@ -340,6 +356,9 @@ async function init(): Promise<void> {
   css2dManager = new CSS2DManager(container);
   floatingTextPool = new FloatingTextPool(gameScene.scene);
   
+  // Create level-up VFX system
+  levelUpVFX = new LevelUpVFX(gameScene.scene);
+  
   // Register cleanup callback for dead entities
   onEntityDestroyed((eid) => {
     objectPool?.release(Renderable.objectIndex[eid]);
@@ -363,7 +382,10 @@ async function init(): Promise<void> {
   // Mount Svelte UI
   const uiOverlay = document.getElementById('ui-overlay');
   if (uiOverlay) {
-    uiApp = mount(App, { target: uiOverlay });
+    uiApp = mount(App, { 
+      target: uiOverlay,
+      props: { playerEid }
+    });
   }
 
   // Start game loop
@@ -396,6 +418,19 @@ async function init(): Promise<void> {
     
     // Update floating text animations
     floatingTextPool?.update(deltaTime);
+    
+    // Process level-up events for VFX
+    const levelUps = consumeLevelUpEvents();
+    for (const levelUp of levelUps) {
+      levelUpVFX?.spawn(
+        Position.x[levelUp.entity],
+        Position.y[levelUp.entity],
+        Position.z[levelUp.entity]
+      );
+    }
+    
+    // Update level-up VFX
+    levelUpVFX?.update(deltaTime);
     
     // Health regeneration
     regenerationSystem(entities, deltaTime);
@@ -436,11 +471,11 @@ async function init(): Promise<void> {
     }
   });
 
-  console.log('🎮 Aether Slash initialized');
-  console.log('📍 Click on grid to move');
-  console.log('⚔️ Click on red monsters to attack');
-  console.log('🖱️ Right-click to clear target');
-  console.log('🎥 Q/E to rotate camera, scroll to zoom');
+  // console.log('🎮 Aether Slash initialized');
+  // console.log('📍 Click on grid to move');
+  // console.log('⚔️ Click on red monsters to attack');
+  // console.log('🖱️ Right-click to clear target');
+  // console.log('🎥 Q/E to rotate camera, scroll to zoom');
 }
 
 /**
@@ -449,13 +484,7 @@ async function init(): Promise<void> {
 function setupCameraControls(scene: GameScene): void {
   document.addEventListener('keydown', (event: KeyboardEvent) => {
     switch (event.key.toLowerCase()) {
-      case 'q':
-        scene.isometricCamera.rotate(-Math.PI / 8);
-        break;
-      case 'e':
-        scene.isometricCamera.rotate(Math.PI / 8);
-        break;
-      // Spawn new monster with 'M' key
+      // Spawn new monster with 'M' key (debug)
       case 'm':
         const x = (Math.random() - 0.5) * 20;
         const z = (Math.random() - 0.5) * 20;
@@ -475,6 +504,7 @@ function setupCameraControls(scene: GameScene): void {
  * Cleanup on page unload
  */
 function cleanup(): void {
+  levelUpVFX?.dispose();
   itemDropPool?.dispose();
   objectPool?.dispose();
   gameScene?.dispose();

@@ -67,6 +67,44 @@ export const CombatStats = {
 };
 
 /**
+ * Base stats component - stores the player's INITIAL stats before any equipment/talent bonuses
+ * This is used as the reference for stat calculations
+ */
+export const BaseStats = {
+  maxHp: new Float32Array(MAX_ENTITIES),
+  maxMp: new Float32Array(MAX_ENTITIES),
+  attackSpeed: new Float32Array(MAX_ENTITIES),
+  attackRange: new Float32Array(MAX_ENTITIES),
+  damageMin: new Float32Array(MAX_ENTITIES),
+  damageMax: new Float32Array(MAX_ENTITIES),
+  armor: new Float32Array(MAX_ENTITIES),
+  healthRegen: new Float32Array(MAX_ENTITIES),
+};
+
+/**
+ * Initialize base stats for an entity (call once when creating player)
+ */
+export function initBaseStats(eid: number, stats: {
+  maxHp: number;
+  maxMp: number;
+  attackSpeed: number;
+  attackRange: number;
+  damageMin: number;
+  damageMax: number;
+  armor: number;
+  healthRegen: number;
+}): void {
+  BaseStats.maxHp[eid] = stats.maxHp;
+  BaseStats.maxMp[eid] = stats.maxMp;
+  BaseStats.attackSpeed[eid] = stats.attackSpeed;
+  BaseStats.attackRange[eid] = stats.attackRange;
+  BaseStats.damageMin[eid] = stats.damageMin;
+  BaseStats.damageMax[eid] = stats.damageMax;
+  BaseStats.armor[eid] = stats.armor;
+  BaseStats.healthRegen[eid] = stats.healthRegen;
+}
+
+/**
  * Combat target component - entity ID of current attack target
  */
 export const Target = {

@@ -28,6 +28,9 @@ export {
   setEquippedItem,
   clearEquippedItem,
   initEquipmentSlots,
+  // Base stats
+  BaseStats,
+  initBaseStats,
   // Add component functions
   addPositionComponent,
   addVelocityComponent,

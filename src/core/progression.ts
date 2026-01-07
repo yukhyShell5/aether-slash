@@ -2,8 +2,9 @@
  * Progression System - XP, Leveling, and Talent Points
  */
 import type { EntityId } from 'bitecs';
-import { CombatStats, hasPlayer } from './components';
+import { CombatStats, BaseStats, hasPlayer } from './components';
 import { playerExperience } from '../stores/player';
+import { triggerStatRecalc } from './equipment-system';
 
 const MAX_ENTITIES = 10000;
 
@@ -109,11 +110,18 @@ function checkLevelUp(eid: EntityId): boolean {
     
     // Apply level-up stat bonuses
     if (hasPlayer(eid)) {
+      // Update BaseStats (the source of truth for stat calculation)
+      BaseStats.maxHp[eid] += HP_PER_LEVEL;
+      BaseStats.damageMin[eid] += DAMAGE_PER_LEVEL;
+      BaseStats.damageMax[eid] += DAMAGE_PER_LEVEL;
+      
+      // We also update CombatStats directly for immediate effect
       CombatStats.maxHp[eid] += HP_PER_LEVEL;
       CombatStats.hp[eid] = CombatStats.maxHp[eid]; // Full heal on level up
-      CombatStats.damageMin[eid] += DAMAGE_PER_LEVEL;
-      CombatStats.damageMax[eid] += DAMAGE_PER_LEVEL;
       CombatStats.level[eid] = newLevel;
+      
+      // Trigger full stat recalculation to apply BaseStats + Gear + Talents
+      triggerStatRecalc(eid);
     }
     
     // Queue level up event for VFX
@@ -123,8 +131,8 @@ function checkLevelUp(eid: EntityId): boolean {
       position: { x: 0, y: 0, z: 0 }, // Will be updated by render system
     });
     
-    console.log(`🎉 LEVEL UP! Now level ${newLevel}`);
-    console.log(`   +${TALENT_POINTS_PER_LEVEL} talent point(s), +${STAT_POINTS_PER_LEVEL} stat point(s)`);
+    // console.log(`🎉 LEVEL UP! Now level ${newLevel}`);
+    // console.log(`   +${TALENT_POINTS_PER_LEVEL} talent point(s), +${STAT_POINTS_PER_LEVEL} stat point(s)`);
     
     // Check for multiple level ups
     checkLevelUp(eid);
@@ -149,7 +157,7 @@ export function gainXP(eid: EntityId, amount: number): boolean {
   const currentXP = Progression.xp[eid];
   const requiredXP = xpForNextLevel(currentLevel);
   
-  console.log(`✨ +${amount} XP (${currentXP}/${requiredXP})`);
+  // console.log(`✨ +${amount} XP (${currentXP}/${requiredXP})`);
   
   // Update Svelte store
   playerExperience.set({

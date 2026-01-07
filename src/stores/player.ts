@@ -52,6 +52,8 @@ export const expPercent: Readable<number> = derived(
  * Player stats store (computed from gear + base stats)
  */
 interface PlayerStats {
+  maxHealth: number;
+  maxMana: number;
   strength: number;
   vitality: number;
   attackSpeed: number;
@@ -61,9 +63,13 @@ interface PlayerStats {
   moveSpeed: number;
   critChance: number;
   critDamage: number;
+  healthRegen: number;
+  lifeSteal: number;
 }
 
 export const playerStats: Writable<PlayerStats> = writable({
+  maxHealth: 100,
+  maxMana: 50,
   strength: 10,
   vitality: 10,
   attackSpeed: 1.0,
@@ -73,6 +79,8 @@ export const playerStats: Writable<PlayerStats> = writable({
   moveSpeed: 8,
   critChance: 5,
   critDamage: 150,
+  healthRegen: 5,
+  lifeSteal: 0,
 });
 
 /**

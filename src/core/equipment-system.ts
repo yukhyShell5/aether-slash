@@ -16,7 +16,6 @@ import {
   removeItemFromInventory,
   addItemToInventory,
 } from '../stores/inventory';
-import { calculateFinalStats, applyFinalStats } from './stat-calculator';
 import { get } from 'svelte/store';
 
 // Equipment change callback for stat recalculation
@@ -31,33 +30,33 @@ export function onEquipmentChanged(callback: EquipmentChangeCallback): void {
 }
 
 /**
+ * Trigger manual stat recalculation
+ */
+export function triggerStatRecalc(playerEid: EntityId): void {
+  if (onEquipmentChange) {
+    onEquipmentChange(playerEid);
+  }
+}
+
+/**
  * Map base item types to equipment slots
+ * NOTE: IDs must match those in loot_tables.json
  */
 const itemTypeToSlot: Record<string, number> = {
-  // Weapons
-  'iron_sword': EquipmentSlot.MAINHAND,
-  'steel_sword': EquipmentSlot.MAINHAND,
-  'crystal_blade': EquipmentSlot.MAINHAND,
-  'shadow_dagger': EquipmentSlot.MAINHAND,
-  'flame_axe': EquipmentSlot.MAINHAND,
+  // Weapons (from loot_tables.json)
+  'sword_iron': EquipmentSlot.MAINHAND,
+  'sword_steel': EquipmentSlot.MAINHAND,
+  'axe_iron': EquipmentSlot.MAINHAND,
   
-  // Armor
-  'leather_armor': EquipmentSlot.CHEST,
-  'chain_mail': EquipmentSlot.CHEST,
-  'plate_armor': EquipmentSlot.CHEST,
-  'robe_wisdom': EquipmentSlot.CHEST,
-  'dragon_scale': EquipmentSlot.CHEST,
+  // Helmets (from loot_tables.json)
+  'helm_leather': EquipmentSlot.HEAD,
+  'helm_iron': EquipmentSlot.HEAD,
   
-  // Helmets
-  'iron_helm': EquipmentSlot.HEAD,
-  'crown_kings': EquipmentSlot.HEAD,
+  // Armor (from loot_tables.json)
+  'chest_leather': EquipmentSlot.CHEST,
   
-  // Rings
-  'gold_ring': EquipmentSlot.RING1,
-  'ruby_ring': EquipmentSlot.RING1,
-  
-  // Amulets
-  'silver_amulet': EquipmentSlot.AMULET,
+  // Rings (from loot_tables.json)
+  'ring_copper': EquipmentSlot.RING1,
 };
 
 /**
@@ -85,21 +84,7 @@ export function getSlotName(slot: number): string {
   return names[slot] ?? 'Slot';
 }
 
-/**
- * Trigger stat recalculation after equipment change
- */
-function triggerStatRecalc(playerEid: EntityId): void {
-  // Recalculate and apply stats
-  const finalStats = calculateFinalStats(playerEid);
-  applyFinalStats(playerEid, finalStats);
-  
-  // Notify callback
-  if (onEquipmentChange) {
-    onEquipmentChange(playerEid);
-  }
-  
-  console.log('📊 Stats recalculated after equipment change');
-}
+
 
 /**
  * Equip an item from inventory to equipment slot
@@ -114,7 +99,7 @@ export function equipItem(
   const invSlot = slots[inventorySlotIndex];
   
   if (!invSlot || !invSlot.itemData || invSlot.itemEid === null) {
-    console.log('❌ No item in inventory slot');
+    // console.log('❌ No item in inventory slot');
     return false;
   }
   
@@ -124,7 +109,7 @@ export function equipItem(
   // Determine target equipment slot
   const targetSlot = equipSlot ?? getSlotForItem(itemData.baseItemId);
   if (targetSlot === null) {
-    console.log('❌ Item cannot be equipped');
+    // console.log('❌ Item cannot be equipped');
     return false;
   }
   
@@ -138,7 +123,7 @@ export function equipItem(
       // Add currently equipped item back to inventory
       const addedSlot = addItemToInventory(currentEquipped, currentItemData);
       if (addedSlot === -1) {
-        console.log('❌ Inventory full, cannot swap');
+        // console.log('❌ Inventory full, cannot swap');
         return false;
       }
     }
@@ -153,7 +138,7 @@ export function equipItem(
   // Store item data in ItemDataStore
   ItemDataStore.set(itemEid, itemData);
   
-  console.log(`🛡️ Equipped: ${itemData.name} → ${getSlotName(targetSlot)}`);
+  // console.log(`🛡️ Equipped: ${itemData.name} → ${getSlotName(targetSlot)}`);
   
   // Recalculate stats
   triggerStatRecalc(playerEid);
@@ -172,27 +157,27 @@ export function unequipItem(
   const equippedEid = getEquippedItem(playerEid, equipSlot);
   
   if (equippedEid === -1) {
-    console.log('❌ No item in equipment slot');
+    // console.log('❌ No item in equipment slot');
     return false;
   }
   
   const itemData = ItemDataStore.get(equippedEid);
   if (!itemData) {
-    console.log('❌ Item data not found');
+    // console.log('❌ Item data not found');
     return false;
   }
   
   // Add to inventory
   const invSlot = addItemToInventory(equippedEid, itemData);
   if (invSlot === -1) {
-    console.log('❌ Inventory full');
+    // console.log('❌ Inventory full');
     return false;
   }
   
   // Clear equipment slot
   clearEquippedItem(playerEid, equipSlot);
   
-  console.log(`📦 Unequipped: ${itemData.name} → Inventory`);
+  // console.log(`📦 Unequipped: ${itemData.name} → Inventory`);
   
   // Recalculate stats
   triggerStatRecalc(playerEid);
